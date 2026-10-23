@@ -1,3 +1,4 @@
+
 services:
   mysql:
     image: mysql:8.4
@@ -13,6 +14,26 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+
+  migrate:
+    build: ./backend
+    environment:
+      NODE_ENV: production
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: app_user
+      DB_PASSWORD: app_password
+      DB_NAME: app_db
+      APP_SECRET: local-test-secret-change-before-production
+      API_URL: http://localhost:3000
+      CORS_ORIGIN: http://localhost:8080
+      MAX_UPLOAD_MB: 50
+      STORAGE_DRIVER: local
+      UPLOAD_DIR: /app/uploads
+    command: ["npm", "run", "db:migrate"]
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   backend:
     build: ./backend
@@ -35,8 +56,8 @@ services:
     volumes:
       - uploads-test:/app/uploads
     depends_on:
-      mysql:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   frontend:
     build:
